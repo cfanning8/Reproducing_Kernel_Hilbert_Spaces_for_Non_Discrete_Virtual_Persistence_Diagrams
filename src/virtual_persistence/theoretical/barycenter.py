@@ -216,20 +216,14 @@ def _compute_barycenter_iterative(diagrams: List[PersistenceDiagram],
                 for p in diagram.points:
                     total_cost += abs(p[1] - p[0]) / 2.0  # Distance to diagonal
                 continue
-            
-            # Build cost matrix: diagram points vs barycenter points using d₁
             n_diag = len(diagram.points)
             n_bary = len(barycenter_points)
-            
             cost_matrix = np.zeros((n_diag, n_bary))
             for i in range(n_diag):
                 for j in range(n_bary):
-                    # Use proper d₁ metric
                     cost_matrix[i, j] = _d1_persistence_point(
                         diagram.points[i], barycenter_points[j]
                     )
-            
-            # Basepoint costs (d₁ to diagonal)
             basepoint_costs_diag = np.array([
                 abs(diagram.points[i, 1] - diagram.points[i, 0]) / 2.0
                 for i in range(n_diag)
