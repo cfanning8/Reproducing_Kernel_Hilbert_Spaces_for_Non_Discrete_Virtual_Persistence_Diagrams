@@ -32,7 +32,7 @@ class MetricPair:
         if self.n > max_points:
             import warnings
             warnings.warn(f"MetricPair: Sampling {max_points} points from {self.n} to prevent memory issues")
-            rng = np.random.RandomState(42)
+            rng = np.random.RandomState(14)
             sample_idx = rng.choice(self.n, size=max_points, replace=False)
             self.X = self.X[sample_idx]
             self.n = len(self.X)
