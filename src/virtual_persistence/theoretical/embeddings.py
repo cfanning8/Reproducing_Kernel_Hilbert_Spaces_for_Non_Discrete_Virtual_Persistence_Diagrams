@@ -173,15 +173,10 @@ class LearnedEmbedding:
                 # Loss: preserve d1 distances
                 loss = torch.mean((dists_embedded - d1_tensor) ** 2)
                 
-                # Backward pass
                 loss.backward()
                 optimizer.step()
-                
-                if epoch % 20 == 0:
-                    print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
-            
-            # Estimate Lipschitz constant
-            # L = max ||grad phi(x)||
+
+            # Estimate Lipschitz constant: L = max ||grad phi(x)||
             X_tensor.requires_grad = True
             X_embedded = self.model(X_tensor)
             grad_norm = torch.autograd.grad(X_embedded.sum(), X_tensor, 

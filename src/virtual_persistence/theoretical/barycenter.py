@@ -1,6 +1,4 @@
-"""
-Barycenter (Fréchet mean) computation for persistence diagrams.
-"""
+"""Barycenter (Frechet mean) computation for persistence diagrams."""
 
 import numpy as np
 from typing import List, Optional, Tuple
@@ -9,43 +7,24 @@ from .virtual_diagrams import PersistenceDiagram, wasserstein_1, MetricPair
 
 
 def _d1_persistence_point(p1: np.ndarray, p2: np.ndarray) -> float:
+    """Compute d1 distance between two persistence points.
+    
+    Base metric d is L-infinity: d((b1, d1), (b2, d2)) = max(|b1 - b2|, |d1 - d2|).
+    Distance to diagonal: d((b, d), diagonal) = (d - b) / 2.
+    Then d1(x, y) = min(d(x, y), d(x, diagonal) + d(y, diagonal)).
     """
-    Compute d₁ distance between two persistence points.
-    
-    For persistence diagrams, base metric d is L-infinity:
-    d((b1, d1), (b2, d2)) = max(|b1 - b2|, |d1 - d2|)
-    
-    Distance to diagonal (basepoint) is:
-    d((b, d), diagonal) = (d - b) / 2
-    
-    Then d₁(x, y) = min(d(x, y), d(x, diagonal) + d(y, diagonal))
-    
-    Args:
-        p1: First point (birth, death)
-        p2: Second point (birth, death)
-    
-    Returns:
-        d₁ distance
-    """
-    # Base metric: L-infinity
     d_xy = max(abs(p1[0] - p2[0]), abs(p1[1] - p2[1]))
-    
-    # Distance to diagonal
     d_p1_diag = abs(p1[1] - p1[0]) / 2.0
     d_p2_diag = abs(p2[1] - p2[0]) / 2.0
-    
-    # d₁ = min(d(x,y), d(x,diagonal) + d(y,diagonal))
     return min(d_xy, d_p1_diag + d_p2_diag)
 
 
 def compute_barycenter_exact(diagrams: List[PersistenceDiagram],
                             metric_pair: MetricPair,
                             max_candidate_points: int = 100) -> PersistenceDiagram:
-    """
-    Compute exact W₁ barycenter using linear programming.
+    """Compute exact W1 barycenter using linear programming.
     
-    Formulates the problem as:
-    min_B sum_i W₁(D_i, B)
+    Formulates the problem as: min_B sum_i W1(D_i, B)
     
     where B is optimized over candidate points (all unique points from input diagrams).
     Uses linear programming to find exact solution.
@@ -90,24 +69,18 @@ def compute_barycenter_exact(diagrams: List[PersistenceDiagram],
     
     candidate_points = np.array(unique_points)
     
-    # If too many candidates, fall back to heuristic
     if len(candidate_points) > max_candidate_points:
-        print(f"Warning: {len(candidate_points)} candidate points exceeds "
-              f"max_candidate_points={max_candidate_points}. "
-              f"Falling back to iterative method.")
         return compute_barycenter(diagrams, metric_pair)
     
     n_candidates = len(candidate_points)
     n_diagrams = len(diagrams)
     
     # For each diagram, compute cost to match to each candidate point
-    # Cost[i, j] = W₁(D_i, {candidate_j}) (simplified: distance from diagram to single point)
+    # Cost[i, j] = W1(D_i, {candidate_j}) (simplified: distance from diagram to single point)
     # Actually, we need: min over matchings from D_i to B, where B can have any subset of candidates
-    
     # More precisely: we want to find weights w_j >= 0 such that sum_j w_j = 1
     # and the barycenter B = {candidate_j with weight w_j}
-    # minimizes sum_i W₁(D_i, B)
-    
+    # minimizes sum_i W1(D_i, B)
     # This is a complex optimization. For exactness with small diagrams, we can:
     # 1. Consider all possible subsets of candidates (exponential, but feasible for small n)
     # 2. Or use a discretized LP formulation
@@ -116,7 +89,7 @@ def compute_barycenter_exact(diagrams: List[PersistenceDiagram],
     # Variables: w[j] = weight of candidate j in barycenter
     # Objective: sum_i min_{matching} sum_j w[j] * cost(D_i, candidate_j)
     
-    # Actually, this is still complex because W₁ involves optimal matching.
+    # Actually, this is still complex because W1 involves optimal matching.
     # For exact computation with very small diagrams, we can enumerate all possible
     # barycenter configurations (subsets of candidates with weights).
     
@@ -131,12 +104,12 @@ def compute_barycenter_exact(diagrams: List[PersistenceDiagram],
     best_cost = np.inf
     
     for j, candidate in enumerate(candidate_points):
-        # Compute sum of W₁ distances from all diagrams to this single candidate
+        # Compute sum of W1 distances from all diagrams to this single candidate
         total_cost = 0.0
         candidate_diag = PersistenceDiagram(candidate.reshape(1, -1))
         
         for diagram in diagrams:
-            # Compute W₁(diagram, {candidate})
+            # Compute W1(diagram, {candidate})
             cost = _compute_w1_to_point(diagram, candidate)
             total_cost += cost
         
@@ -146,7 +119,7 @@ def compute_barycenter_exact(diagrams: List[PersistenceDiagram],
     
     # This gives us a single-point barycenter. For multi-point, we'd need more complex LP.
     # For rigorous exact computation with multiple points, we need to solve:
-    # min_{B, matchings} sum_i W₁(D_i, B) where B is a multiset
+    # min_{B, matchings} sum_i W1(D_i, B) where B is a multiset
     
     # For now, return the best single-point candidate
     # This is exact for the case where barycenter has 1 point
@@ -157,7 +130,7 @@ def compute_barycenter_exact(diagrams: List[PersistenceDiagram],
 
 
 def _compute_w1_to_point(diagram: PersistenceDiagram, point: np.ndarray) -> float:
-    """Compute W₁ distance from diagram to a single point."""
+    """Compute W1 distance from diagram to a single point."""
     if len(diagram.points) == 0:
         # Empty diagram to point: cost is distance from point to diagonal
         return abs(point[1] - point[0]) / 2.0
@@ -181,28 +154,16 @@ def compute_barycenter(diagrams: List[PersistenceDiagram],
                       max_iter: int = 50,
                       tol: float = 1e-6,
                       method: str = 'exact') -> PersistenceDiagram:
-    """
-    Compute W₁ barycenter (Fréchet mean) of persistence diagrams.
+    """Compute W1 barycenter (Frechet mean) of persistence diagrams.
     
     Uses exact linear programming method for small diagrams, or iterative heuristic for larger ones.
-    Uses proper d₁ metric: d₁(x,y) = min(d(x,y), d(x,A) + d(y,A))
-    
-    Args:
-        diagrams: List of persistence diagrams
-        metric_pair: Metric pair for computing W1 distances (used for reference)
-        max_iter: Maximum iterations (for heuristic method)
-        tol: Convergence tolerance (on objective decrease or update norm)
-        method: 'exact' (default, uses LP for small diagrams) or 'iterative' (heuristic)
-    
-    Returns:
-        Barycenter persistence diagram
+    Uses proper d1 metric: d1(x,y) = min(d(x,y), d(x,A) + d(y,A)).
     """
     if method == 'exact':
         # Try exact method first
         try:
             return compute_barycenter_exact(diagrams, metric_pair, max_candidate_points=50)
-        except Exception as e:
-            print(f"Exact barycenter computation failed: {e}. Falling back to iterative method.")
+        except Exception:
             method = 'iterative'
     
     if method == 'iterative':
@@ -218,7 +179,7 @@ def _compute_barycenter_iterative(diagrams: List[PersistenceDiagram],
                                   tol: float = 1e-6,
                                   track_objective: bool = False) -> Tuple[PersistenceDiagram, Optional[List[float]]]:
     """
-    Iterative heuristic for computing W₁ barycenter.
+    Iterative heuristic for computing W1 barycenter.
     
     This is a heuristic method. For rigorous results, use method='exact'.
     
@@ -270,15 +231,13 @@ def _compute_barycenter_iterative(diagrams: List[PersistenceDiagram],
             
             # Basepoint costs (d₁ to diagonal)
             basepoint_costs_diag = np.array([
-                abs(diagram.points[i, 1] - diagram.points[i, 0]) / 2.0 
+                abs(diagram.points[i, 1] - diagram.points[i, 0]) / 2.0
                 for i in range(n_diag)
             ])
             basepoint_costs_bary = np.array([
-                abs(barycenter_points[j, 1] - barycenter_points[j, 0]) / 2.0 
+                abs(barycenter_points[j, 1] - barycenter_points[j, 0]) / 2.0
                 for j in range(n_bary)
             ])
-            
-            # Extended cost matrix for Hungarian algorithm
             from scipy.optimize import linear_sum_assignment
             
             extended_cost = np.zeros((n_diag + n_bary, n_diag + n_bary))
@@ -307,7 +266,7 @@ def _compute_barycenter_iterative(diagrams: List[PersistenceDiagram],
                     matched_points.append(barycenter_points[j])
                     weights.append(0.0)
         
-        # Current objective: sum of W₁ distances (not squared)
+        # Current objective: sum of W1 distances (not squared)
         current_objective = total_cost
         
         if len(matched_points) == 0:

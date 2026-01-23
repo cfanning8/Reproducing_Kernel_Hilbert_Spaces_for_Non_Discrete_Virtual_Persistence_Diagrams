@@ -100,9 +100,9 @@ def lower_star_filtration_graph(graph_data,
         graph_data: Graph data (PyTorch Geometric or dict)
         tau: Heat diffusion time
         heat_method: 'content' or 'diffusion' for vertex function
-        max_dim: Maximum dimension of simplices (default: 2 for H₁ computation)
-                 For H₁, 2-skeleton (up to triangles) is sufficient.
-                 Higher dimensions increase computational cost (O(n³) for triangles).
+        max_dim: Maximum dimension of simplices (default: 2 for H1 computation)
+                 For H1, 2-skeleton (up to triangles) is sufficient.
+                 Higher dimensions increase computational cost (O(n^3) for triangles).
     
     Returns:
         Persistence diagram (H1 only for now)
@@ -218,8 +218,8 @@ def compute_persistence_diagram(X,
         is_graph: Whether input is a graph
         tau: Heat diffusion time (for graphs)
         heat_method: Heat method for graphs ('content' or 'diffusion')
-        max_dim: Maximum dimension of simplices (default: 2 for H₁)
-                 For H₁, 2-skeleton is sufficient. Higher dimensions increase cost.
+        max_dim: Maximum dimension of simplices (default: 2 for H1)
+                 For H1, 2-skeleton is sufficient. Higher dimensions increase cost.
     
     Returns:
         Array of (birth, death) pairs, shape (n, 2)

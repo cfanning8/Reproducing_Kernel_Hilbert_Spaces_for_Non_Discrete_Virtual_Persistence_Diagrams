@@ -66,7 +66,7 @@ def heat_kernel(L: csr_matrix, tau: float) -> csr_matrix:
         return csr_matrix(H_dense)
     else:
         # For large matrices, use iterative method
-        # Approximate: H(tau) ≈ (I - tau*L/k)^k for large k
+        # Approximate: H(tau) ~= (I - tau*L/k)^k for large k
         k = 20
         H = I - (tau / k) * L
         for _ in range(k - 1):
