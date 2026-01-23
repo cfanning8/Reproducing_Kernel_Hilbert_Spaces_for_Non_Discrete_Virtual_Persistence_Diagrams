@@ -343,7 +343,6 @@ def compute_class_barycenters(diagrams: List[PersistenceDiagram],
     for c in classes:
         class_diagrams = [diagrams[i] for i in range(len(diagrams)) if labels[i] == c]
         if len(class_diagrams) > 0:
-            print(f"  Computing barycenter for class {c} ({len(class_diagrams)} diagrams)...")
             barycenters[c] = compute_barycenter(class_diagrams, metric_pair)
         else:
             # Empty class - return empty diagram
