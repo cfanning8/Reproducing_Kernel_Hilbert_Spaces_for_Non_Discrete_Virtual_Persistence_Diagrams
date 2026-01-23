@@ -1,6 +1,4 @@
-"""
-Sophisticated Hilbert embeddings: learned, graph Laplacian-based, etc.
-"""
+"""Hilbert embeddings: learned, graph Laplacian-based, spectral."""
 
 import numpy as np
 from typing import Callable, Optional, Tuple
