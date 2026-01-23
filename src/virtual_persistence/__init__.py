@@ -10,21 +10,20 @@ Non-Discrete Virtual Persistence Diagrams.
 
 __version__ = "0.1.0"
 
-# Core theoretical modules
-from .theoretical.virtual_diagrams import (
+from .virtual_diagrams import (
     MetricPair,
     PersistenceDiagram,
     VirtualDiagram,
     grothendieck_metric
 )
 
-from .theoretical.kernels import (
+from .kernels import (
     HilbertEmbedding,
     GaussianRKHSKernel,
     RandomFourierFeatures
 )
 
-from .theoretical.embeddings import (
+from .embeddings import (
     GraphLaplacianEmbedding,
     LearnedEmbedding,
     SpectralEmbeddingWrapper,

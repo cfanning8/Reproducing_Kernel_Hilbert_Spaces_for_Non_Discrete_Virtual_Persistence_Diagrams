@@ -29,7 +29,6 @@ class MetricPair:
         self.X = np.asarray(X)
         self.n = len(self.X)
         
-        # Safety check: sample if too many points to prevent memory issues
         if self.n > max_points:
             import warnings
             warnings.warn(f"MetricPair: Sampling {max_points} points from {self.n} to prevent memory issues")
@@ -38,12 +37,10 @@ class MetricPair:
             self.X = self.X[sample_idx]
             self.n = len(self.X)
         
-        self._d = d  # Store as private, compute lazily
+        self._d = d
         self._d_computed = (d is not None)
         
         if A is None:
-            # Default: use diagonal/basepoint proxy (all points with same coordinates)
-            # For persistence diagrams, typically A is the diagonal
             self.A = set()
         else:
             self.A = set(A) if isinstance(A, (list, np.ndarray)) else A
@@ -52,14 +49,12 @@ class MetricPair:
         self._X_A = None
         self.lazy = lazy
         
-        # Only compute distance matrix if not lazy and d not provided
         if not lazy and d is None:
             self._compute_d()
     
     def _compute_d(self):
         """Compute distance matrix if not already computed."""
         if not self._d_computed:
-            # Safety check: warn if matrix would be very large
             if self.n > 10000:
                 import warnings
                 warnings.warn(f"Computing {self.n}x{self.n} distance matrix - this may be slow and memory-intensive")
@@ -76,14 +71,10 @@ class MetricPair:
     def d_to_A(self, i: int) -> float:
         """Distance from point i to set A."""
         if not self.A:
-            # For persistence diagrams: distance to diagonal = |death - birth| / 2
-            # This is the L-infinity distance to the diagonal line
-            if self.X.shape[1] == 2:  # Persistence points (birth, death)
+            if self.X.shape[1] == 2:
                 return abs(self.X[i, 1] - self.X[i, 0]) / 2.0
             else:
-                # If A is empty, use distance to "diagonal" (origin or mean)
                 return np.linalg.norm(self.X[i])
-        # Ensure d is computed
         if not self._d_computed:
             self._compute_d()
         return min(self.d[i, a] for a in self.A)
@@ -101,12 +92,10 @@ class MetricPair:
         
         n = self.n
         
-        # Safety check: warn if matrix would be very large
         if n > 10000:
             import warnings
             warnings.warn(f"Computing {n}x{n} d1 matrix - this may be slow and memory-intensive")
         
-        # Ensure d is computed
         if not self._d_computed:
             self._compute_d()
         
@@ -129,22 +118,16 @@ class MetricPair:
             return self._X_A
         
         if not self.A:
-            # No collapse needed
             self._X_A = (self.X, self._d1 if self._d1 is not None else self._compute_d1())
             return self._X_A
         
-        # Collapse A to single point [A]
         A_list = sorted(self.A)
         non_A = [i for i in range(self.n) if i not in self.A]
         
-        # Points: non-A points + one basepoint
         X_quotient = np.vstack([self.X[non_A], np.zeros((1, self.X.shape[1]))])
         n_quotient = len(X_quotient)
-        
-        # Compute d1 on quotient
         d1_quotient = np.zeros((n_quotient, n_quotient))
         
-        # Map original indices to quotient indices
         idx_map = {i: j for j, i in enumerate(non_A)}
         basepoint_idx = n_quotient - 1
         
@@ -193,18 +176,14 @@ class PersistenceDiagram:
     
     def __setstate__(self, state):
         """Support pickle deserialization (backwards compatible with any tuple length)."""
-        # Handle any tuple length - extract points from first element
         if isinstance(state, tuple) and len(state) > 0:
-            # Try first element as points
             try:
                 self.points = np.asarray(state[0])
                 if len(self.points) > 0 and self.points.shape[1] == 2:
-                    return  # Success
+                    return
             except:
                 pass
             
-            # If first element didn't work, try other approaches
-            # For old formats, points might be in different position
             for item in state:
                 try:
                     arr = np.asarray(item)
@@ -214,16 +193,12 @@ class PersistenceDiagram:
                 except:
                     continue
             
-            # Fallback: empty diagram
             self.points = np.empty((0, 2))
         elif isinstance(state, dict):
-            # New format: dict with 'points' key
             self.points = np.asarray(state.get('points', np.empty((0, 2))))
         elif isinstance(state, np.ndarray):
-            # Direct array
             self.points = np.asarray(state)
         else:
-            # Fallback: empty diagram
             self.points = np.empty((0, 2))
 
 
@@ -305,27 +280,20 @@ def wasserstein_1(alpha: np.ndarray, beta: np.ndarray, d1: np.ndarray) -> float:
     if m == 0:
         return np.sum([d1_to_basepoint(p, d1) for p in alpha])
     
-    # Build cost matrix: match points or send to basepoint
-    # For simplicity, assume points are indices in the metric space
-    # In practice, need to map (birth, death) to metric space points
     cost_matrix = np.zeros((n, m))
     
     for i in range(n):
         for j in range(m):
-            # Distance between persistence points (simplified: use birth+death as proxy)
-            # In real implementation, need proper embedding of persistence points
             cost_matrix[i, j] = np.abs(alpha[i, 0] - beta[j, 0]) + np.abs(alpha[i, 1] - beta[j, 1])
     
-    # Add basepoint costs
     basepoint_costs_alpha = np.array([d1_to_basepoint(alpha[i], d1) for i in range(n)])
     basepoint_costs_beta = np.array([d1_to_basepoint(beta[j], d1) for j in range(m)])
     
-    # Extended cost matrix for Hungarian algorithm with basepoint
     extended_cost = np.zeros((n + m, n + m))
     extended_cost[:n, :m] = cost_matrix
     extended_cost[:n, m:] = np.diag(basepoint_costs_alpha)
     extended_cost[n:, :m] = np.diag(basepoint_costs_beta)
-    extended_cost[n:, m:] = 0  # basepoint to basepoint is free
+    extended_cost[n:, m:] = 0
     
     row_ind, col_ind = linear_sum_assignment(extended_cost)
     return extended_cost[row_ind, col_ind].sum()
@@ -333,8 +301,6 @@ def wasserstein_1(alpha: np.ndarray, beta: np.ndarray, d1: np.ndarray) -> float:
 
 def d1_to_basepoint(point: np.ndarray, d1: np.ndarray) -> float:
     """Distance from persistence point to basepoint (diagonal)."""
-    # Simplified: use distance to origin in persistence space
-    # In practice, need proper metric on persistence space
     return np.linalg.norm(point)
 
 
@@ -354,7 +320,6 @@ def grothendieck_metric(g1: VirtualDiagram, g2: VirtualDiagram,
     alpha1, beta1 = g1.to_diagram()
     alpha2, beta2 = g2.to_diagram()
     
-    # Compute alpha1 + beta2 and alpha2 + beta1
     combined1 = np.vstack([alpha1, beta2]) if len(beta2) > 0 else alpha1
     combined2 = np.vstack([alpha2, beta1]) if len(beta1) > 0 else alpha2
     

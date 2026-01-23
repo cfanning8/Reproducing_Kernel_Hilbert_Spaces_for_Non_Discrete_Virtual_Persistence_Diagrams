@@ -44,37 +44,28 @@ class GraphLaplacianEmbedding:
         """
         n = len(X)
         
-        # Construct k-NN graph using d1
         from sklearn.neighbors import kneighbors_graph
         knn_graph = kneighbors_graph(d1, n_neighbors=self.k_neighbors, 
                                      mode='distance', metric='precomputed')
         
-        # Compute graph Laplacian
         if self.normalized:
             L = csgraph.laplacian(knn_graph, normed=True)
         else:
             L = csgraph.laplacian(knn_graph, normed=False)
         
-        # Compute eigenvectors (smallest eigenvalues correspond to smooth functions)
-        # We want dim_H + 1 (including constant eigenvector)
         try:
             eigenvals, eigenvecs = eigs(L, k=min(self.dim_H + 1, n - 1), 
                                         which='SM', return_eigenvectors=True)
             eigenvals = np.real(eigenvals)
             eigenvecs = np.real(eigenvecs)
             
-            # Sort by eigenvalue
             idx = np.argsort(eigenvals)
             eigenvals = eigenvals[idx]
             eigenvecs = eigenvecs[:, idx]
             
-            # Remove constant eigenvector (first one)
             self.eigenvalues = eigenvals[1:]
             self.eigenvectors = eigenvecs[:, 1:]
             
-            # Estimate Lipschitz constant
-            # L = max_i ||grad phi_i|| / ||phi_i||
-            # Simplified: use largest eigenvalue
             self.L = np.max(self.eigenvalues) if len(self.eigenvalues) > 0 else 1.0
         except Exception as e:
             warnings.warn(f"Error computing Laplacian eigenvectors: {e}")
@@ -93,18 +84,17 @@ class GraphLaplacianEmbedding:
         if self.eigenvectors is None:
             raise ValueError("Embedding not fitted")
         
-        # Project onto eigenvectors
-            if len(x.shape) == 1:
-                x = x.reshape(1, -1)
-            
-            if x.shape[1] != self.eigenvectors.shape[0]:
-                raise ValueError(
-                    f"Input dimension {x.shape[1]} does not match "
-                    f"embedding dimension {self.eigenvectors.shape[0]}. "
-                    f"Must fit embedding on data with same dimension."
-                )
-            
-            return (self.eigenvectors.T @ x.T).T.flatten()[:self.dim_H]
+        if len(x.shape) == 1:
+            x = x.reshape(1, -1)
+        
+        if x.shape[1] != self.eigenvectors.shape[0]:
+            raise ValueError(
+                f"Input dimension {x.shape[1]} does not match "
+                f"embedding dimension {self.eigenvectors.shape[0]}. "
+                f"Must fit embedding on data with same dimension."
+            )
+        
+        return (self.eigenvectors.T @ x.T).T.flatten()[:self.dim_H]
 
 
 class LearnedEmbedding:
@@ -144,7 +134,6 @@ class LearnedEmbedding:
             
             n, input_dim = X.shape
             
-            # Build network
             layers = []
             dims = [input_dim] + self.hidden_dims + [self.dim_H]
             for i in range(len(dims) - 1):
@@ -154,29 +143,19 @@ class LearnedEmbedding:
             
             self.model = nn.Sequential(*layers)
             
-            # Convert to tensors
             X_tensor = torch.FloatTensor(X)
             d1_tensor = torch.FloatTensor(d1)
             
-            # Training loop: minimize distance distortion
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
             
             for epoch in range(max_epochs):
                 optimizer.zero_grad()
-                
-                # Forward pass
                 X_embedded = self.model(X_tensor)
-                
-                # Compute pairwise distances in embedding space
                 dists_embedded = torch.cdist(X_embedded, X_embedded)
-                
-                # Loss: preserve d1 distances
                 loss = torch.mean((dists_embedded - d1_tensor) ** 2)
-                
                 loss.backward()
                 optimizer.step()
 
-            # Estimate Lipschitz constant: L = max ||grad phi(x)||
             X_tensor.requires_grad = True
             X_embedded = self.model(X_tensor)
             grad_norm = torch.autograd.grad(X_embedded.sum(), X_tensor, 
@@ -243,19 +222,12 @@ class SpectralEmbeddingWrapper:
             d1: Optional precomputed distance matrix
         """
         if d1 is not None:
-            # Use precomputed distances
-            # Convert to affinity matrix
             sigma = np.median(d1[d1 > 0])
             affinity = np.exp(-d1**2 / (2 * sigma**2))
-            # Use custom affinity
-            # Note: SpectralEmbedding doesn't directly support precomputed
-            # So we'll use the points and let it compute
             pass
         
         self.embedding.fit(X)
-        # Estimate Lipschitz constant from embedding
         if hasattr(self.embedding, 'embedding_'):
-            # Use embedding matrix to estimate Lipschitz constant
             emb_matrix = self.embedding.embedding_
             self.L = np.linalg.norm(emb_matrix, ord=2)
         else:
@@ -309,7 +281,9 @@ def create_embedding(embedding_type: str = 'default', **kwargs) -> Tuple[Callabl
         L = 1.0  # Will be set after fit
         return phi, L
     
-    else:  # default
-        from .pipeline import create_default_embedding
-        return create_default_embedding(dim_H=dim_H)
+    else:
+        emb = GraphLaplacianEmbedding(dim_H=dim_H)
+        def phi(x):
+            return emb(x)
+        return phi, emb.L
 

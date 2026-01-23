@@ -79,24 +79,21 @@ class GaussianRKHSKernel:
                           n_classes * dim_H. The kernel will create a block-diagonal Sigma.
         """
         self.J = J
-        self.Sigma_base = np.asarray(Sigma)  # Base Sigma (dim_H x dim_H)
+        self.Sigma_base = np.asarray(Sigma)
         self.t = t
         self.embedding_dim = embedding_dim
         
-        # If embedding_dim is provided and different from Sigma size, create block-diagonal
         dim_H = self.Sigma_base.shape[0]
         if embedding_dim is not None and embedding_dim != dim_H:
             if embedding_dim % dim_H != 0:
                 raise ValueError(f"embedding_dim ({embedding_dim}) must be a multiple of dim_H ({dim_H})")
             n_blocks = embedding_dim // dim_H
-            # Create block-diagonal Sigma: [Sigma, 0, ...; 0, Sigma, ...; ...]
             self.Sigma = np.kron(np.eye(n_blocks), self.Sigma_base)
         else:
             self.Sigma = self.Sigma_base
         
-        # Precompute Sigma^{1/2}
         self.Sigma_sqrt = sqrtm(self.Sigma)
-        self.Q = None  # Covariance operator Q = J* Sigma J: B -> B*
+        self.Q = None
     
     def __call__(self, x: np.ndarray, y: np.ndarray) -> float:
         """
@@ -108,26 +105,20 @@ class GaussianRKHSKernel:
         Returns:
             k_t(x, y)
         """
-        # Compute J(x - y)
         x_points, x_coeffs = x if isinstance(x, tuple) else (x, np.ones(len(x)))
         y_points, y_coeffs = y if isinstance(y, tuple) else (y, np.ones(len(y)))
         
-        # For simplicity, assume x and y are already in H via J
-        # In full implementation, need to compute J(x) and J(y)
         if isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
-            # Assume x, y are already in H
             diff = x - y
         else:
             Jx = self.J.extend_to_B(x_points, x_coeffs)
             Jy = self.J.extend_to_B(y_points, y_coeffs)
             diff = Jx - Jy
         
-        # Auto-detect dimension and adjust Sigma if needed
         actual_dim = len(diff)
         sigma_dim = self.Sigma.shape[0]
         
         if actual_dim != sigma_dim:
-            # Embeddings are concatenated - use block-diagonal Sigma
             if actual_dim % sigma_dim != 0:
                 raise ValueError(f"Embedding dimension {actual_dim} is not a multiple of Sigma dimension {sigma_dim}")
             n_blocks = actual_dim // sigma_dim
@@ -136,7 +127,6 @@ class GaussianRKHSKernel:
         else:
             Sigma_sqrt_actual = self.Sigma_sqrt
         
-        # Compute ||Sigma^{1/2} (Jx - Jy)||^2
         Sigma_sqrt_diff = Sigma_sqrt_actual @ diff
         norm_sq = np.dot(Sigma_sqrt_diff, Sigma_sqrt_diff)
         
@@ -156,12 +146,10 @@ class GaussianRKHSKernel:
         n = len(X)
         K = np.zeros((n, n))
         
-        # Auto-detect embedding dimension and adjust Sigma if needed
         actual_dim = X.shape[1] if len(X.shape) > 1 else len(X[0])
         sigma_dim = self.Sigma.shape[0]
         
         if actual_dim != sigma_dim:
-            # Embeddings are concatenated - use block-diagonal Sigma
             if actual_dim % sigma_dim != 0:
                 raise ValueError(f"Embedding dimension {actual_dim} is not a multiple of Sigma dimension {sigma_dim}")
             n_blocks = actual_dim // sigma_dim
@@ -180,19 +168,9 @@ class GaussianRKHSKernel:
         return K
     
     def lipschitz_bound(self, f_norm: float) -> float:
-        """
-        Compute Lipschitz bound: Lip_rho(f|_K) <= sqrt(t) ||Sigma^{1/2} J|| ||f||_H
-        
-        Args:
-            f_norm: ||f||_{H_{J,Sigma,t}}
-        
-        Returns:
-            Lipschitz bound
-        """
-        # ||Sigma^{1/2} J|| = ||Sigma^{1/2}|| ||J|| = ||Sigma^{1/2}|| L
+        """Compute Lipschitz bound: Lip_rho(f|_K) <= sqrt(t) ||Sigma^{1/2} J|| ||f||_H"""
         Sigma_sqrt_norm = np.linalg.norm(self.Sigma_sqrt, ord=2)
         J_norm = self.J.L
-        
         return np.sqrt(self.t) * Sigma_sqrt_norm * J_norm * f_norm
 
 
@@ -214,10 +192,9 @@ class RandomFourierFeatures:
         self.R = R
         self.rng = np.random.RandomState(seed)
         
-        # Sample u_r ~ N(0, Sigma) in H
         dim_H = self.kernel.Sigma.shape[0]
-        z_r = self.rng.randn(R, dim_H)  # z_r ~ N(0, I)
-        self.u_r = (self.kernel.Sigma_sqrt @ z_r.T).T  # u_r = Sigma^{1/2} z_r
+        z_r = self.rng.randn(R, dim_H)
+        self.u_r = (self.kernel.Sigma_sqrt @ z_r.T).T
     
     def __call__(self, x: np.ndarray) -> np.ndarray:
         """
@@ -238,12 +215,7 @@ class RandomFourierFeatures:
         return features / np.sqrt(self.R)
     
     def real_features(self, x: np.ndarray) -> np.ndarray:
-        """
-        Real-valued feature map using cos/sin.
-        
-        Returns:
-            [cos(sqrt(t) <Jx, u_r>), sin(sqrt(t) <Jx, u_r>)] for r=1,...,R
-        """
+        """Real-valued feature map using cos/sin."""
         features = []
         
         for r in range(self.R):

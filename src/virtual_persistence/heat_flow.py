@@ -27,13 +27,11 @@ def graph_laplacian(adjacency: np.ndarray, normalized: bool = True) -> csr_matri
     degrees = np.array(adjacency.sum(axis=1)).flatten()
     
     if normalized:
-        # Normalized Laplacian: L = I - D^{-1/2} A D^{-1/2}
         deg_sqrt_inv = np.zeros(n)
         deg_sqrt_inv[degrees > 0] = 1.0 / np.sqrt(degrees[degrees > 0])
         D_sqrt_inv = csr_matrix((deg_sqrt_inv, (np.arange(n), np.arange(n))))
         L = eye(n) - D_sqrt_inv @ adjacency @ D_sqrt_inv
     else:
-        # Combinatorial Laplacian: L = D - A
         D = csr_matrix((degrees, (np.arange(n), np.arange(n))))
         L = D - adjacency
     
@@ -51,22 +49,15 @@ def heat_kernel(L: csr_matrix, tau: float) -> csr_matrix:
     Returns:
         Heat kernel matrix (sparse)
     """
-    # Use sparse matrix exponential
-    # For large matrices, expm_multiply is more efficient
     n = L.shape[0]
     I = eye(n)
     
-    # For small matrices, can use dense expm
     if n < 1000:
         L_dense = L.toarray()
-        H_dense = np.linalg.matrix_power(I.toarray() - tau * L_dense / 10, 10)
-        # More accurate: use scipy.linalg.expm
         from scipy.linalg import expm
         H_dense = expm(-tau * L_dense)
         return csr_matrix(H_dense)
     else:
-        # For large matrices, use iterative method
-        # Approximate: H(tau) ~= (I - tau*L/k)^k for large k
         k = 20
         H = I - (tau / k) * L
         for _ in range(k - 1):
@@ -94,12 +85,9 @@ def heat_edge_weights(adjacency: np.ndarray,
     L = graph_laplacian(adjacency, normalized=normalized)
     H = heat_kernel(L, tau)
     
-    # Extract weights only for existing edges
-    # H is dense, but we only keep weights where adjacency > 0
     H_dense = H.toarray() if isinstance(H, csr_matrix) else H
     adj_dense = adjacency.toarray() if isinstance(adjacency, csr_matrix) else adjacency
     
-    # Set weights to zero for non-edges
     weights = H_dense * (adj_dense > 0)
     
     return weights
@@ -131,20 +119,16 @@ def heat_vertex_function(adjacency: np.ndarray,
     H = heat_kernel(L, tau)
     
     if method == 'content':
-        # Heat content: diagonal of heat kernel
         H_dense = H.toarray() if isinstance(H, csr_matrix) else H
         f = np.diag(H_dense)
     elif method == 'diffusion':
-        # Diffusion from source
         n = adjacency.shape[0]
         if source is None:
-            # Uniform source
             source = np.ones(n) / n
         else:
             source = np.asarray(source)
             source = source / source.sum()
         
-        # u(tau) = H(tau) * s
         if isinstance(H, csr_matrix):
             u = H @ source
         else:
@@ -153,28 +137,22 @@ def heat_vertex_function(adjacency: np.ndarray,
     else:
         raise ValueError(f"Unknown method: {method}")
     
-    # Normalize per graph to ensure comparability across graphs
     if normalize == 'rank':
-        # Rank normalization: f(v) <- rank(f(v)) / |V|
-        # Very robust, scale-free, recommended
-        ranks = np.argsort(np.argsort(f))  # Get ranks (0-indexed)
+        ranks = np.argsort(np.argsort(f))
         f = ranks / len(f)
     elif normalize == 'minmax':
-        # Min-max normalization to [0, 1]
         f_min, f_max = f.min(), f.max()
         if f_max > f_min:
             f = (f - f_min) / (f_max - f_min)
         else:
-            f = np.zeros_like(f)  # All values equal
+            f = np.zeros_like(f)
     elif normalize == 'zscore':
-        # Z-score normalization
         f_mean, f_std = f.mean(), f.std()
         if f_std > 0:
             f = (f - f_mean) / f_std
         else:
-            f = np.zeros_like(f)  # All values equal
+            f = np.zeros_like(f)
     elif normalize is None or normalize == 'none':
-        # No normalization (not recommended for cross-graph comparability)
         pass
     else:
         raise ValueError(f"Unknown normalization method: {normalize}")
