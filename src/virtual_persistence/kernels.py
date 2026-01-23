@@ -9,21 +9,11 @@ from scipy.sparse.linalg import LinearOperator
 
 
 class HilbertEmbedding:
-    """
-    Hilbert embedding phi: (X/A, d1, [A]) -> H with phi([A]) = 0.
-    Extends to bounded linear operator J: B -> H via Lipschitz-free property.
-    """
+    """Hilbert embedding phi: (X/A, d1, [A]) -> H with phi([A]) = 0."""
     
     def __init__(self, phi: Callable[[np.ndarray], np.ndarray], 
                  L: float, basepoint: Optional[np.ndarray] = None):
-        """
-        Initialize Hilbert embedding.
-        
-        Args:
-            phi: Function mapping points in X/A to H, with phi([A]) = 0
-            L: Lipschitz constant Lip_{d1}(phi)
-            basepoint: Basepoint [A] in X/A
-        """
+        """Initialize Hilbert embedding."""
         self.phi = phi
         self.L = L
         self.basepoint = basepoint
@@ -38,19 +28,7 @@ class HilbertEmbedding:
     
     def extend_to_B(self, delta_points: np.ndarray, 
                     coefficients: np.ndarray) -> np.ndarray:
-        """
-        Extend to linear operator J on B.
-        
-        For x = sum_i n_i delta_{u_i} in K(X,A) subset B,
-        J(x) = sum_i n_i phi(u_i).
-        
-        Args:
-            delta_points: Points u_i in X/A, shape (n, dim)
-            coefficients: Coefficients n_i, shape (n,)
-        
-        Returns:
-            J(x) in H
-        """
+        """Extend to linear operator J on B: J(x) = sum_i n_i phi(u_i)."""
         result = np.zeros_like(self.phi(delta_points[0]))
         for i, (point, coeff) in enumerate(zip(delta_points, coefficients)):
             result += coeff * self(point)
@@ -58,26 +36,11 @@ class HilbertEmbedding:
 
 
 class GaussianRKHSKernel:
-    """
-    Translation-invariant positive definite kernel on B (and K(X,A))
-    via Gaussian measure on dual space B*.
-    
-    k_t(x,y) = exp(-t/2 ||Sigma^{1/2} J(x-y)||^2)
-    """
+    """Translation-invariant kernel: k_t(x,y) = exp(-t/2 ||Sigma^{1/2} J(x-y)||^2)."""
     
     def __init__(self, J: HilbertEmbedding, Sigma: np.ndarray, t: float = 1.0, 
                  embedding_dim: Optional[int] = None):
-        """
-        Initialize Gaussian RKHS kernel.
-        
-        Args:
-            J: Hilbert embedding extended to B
-            Sigma: Covariance operator on ran(J), shape (dim_H, dim_H)
-            t: Scale parameter
-            embedding_dim: Expected embedding dimension. If None, inferred from Sigma.
-                          If embeddings are concatenated across classes, this should be
-                          n_classes * dim_H. The kernel will create a block-diagonal Sigma.
-        """
+        """Initialize Gaussian RKHS kernel."""
         self.J = J
         self.Sigma_base = np.asarray(Sigma)
         self.t = t
@@ -96,15 +59,7 @@ class GaussianRKHSKernel:
         self.Q = None
     
     def __call__(self, x: np.ndarray, y: np.ndarray) -> float:
-        """
-        Evaluate kernel k_t(x, y).
-        
-        Args:
-            x, y: Elements of B represented as (delta_points, coefficients)
-        
-        Returns:
-            k_t(x, y)
-        """
+        """Evaluate kernel k_t(x, y)."""
         x_points, x_coeffs = x if isinstance(x, tuple) else (x, np.ones(len(x)))
         y_points, y_coeffs = y if isinstance(y, tuple) else (y, np.ones(len(y)))
         
@@ -133,16 +88,7 @@ class GaussianRKHSKernel:
         return np.exp(-self.t / 2 * norm_sq)
     
     def gram_matrix(self, X: np.ndarray) -> np.ndarray:
-        """
-        Compute Gram matrix K_ij = k_t(x_i, x_j).
-        
-        Args:
-            X: Array of points, shape (n, dim) (already embedded via J)
-               If dim != Sigma.shape[0], automatically adjusts Sigma to block-diagonal
-        
-        Returns:
-            Gram matrix, shape (n, n)
-        """
+        """Compute Gram matrix K_ij = k_t(x_i, x_j)."""
         n = len(X)
         K = np.zeros((n, n))
         
@@ -180,14 +126,7 @@ class RandomFourierFeatures:
     """
     
     def __init__(self, kernel: GaussianRKHSKernel, R: int, seed: Optional[int] = 14):
-        """
-        Initialize random Fourier features.
-        
-        Args:
-            kernel: Gaussian RKHS kernel
-            R: Number of random features
-            seed: Random seed (default: 14)
-        """
+        """Initialize random Fourier features."""
         self.kernel = kernel
         self.R = R
         self.rng = np.random.RandomState(seed)
@@ -197,15 +136,7 @@ class RandomFourierFeatures:
         self.u_r = (self.kernel.Sigma_sqrt @ z_r.T).T
     
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        """
-        Compute random feature map Phi_R(x).
-        
-        Args:
-            x: Point in H (already embedded via J)
-        
-        Returns:
-            Phi_R(x) = (1/sqrt(R)) (e^{i sqrt(t) <Jx, u_1>}, ..., e^{i sqrt(t) <Jx, u_R>})
-        """
+        """Compute random feature map Phi_R(x)."""
         features = np.zeros(self.R, dtype=complex)
         
         for r in range(self.R):
@@ -236,19 +167,10 @@ class RandomFourierFeatures:
         return np.dot(phi_x, phi_y)
     
     def concentration_bound(self, epsilon: float) -> float:
-        """
-        Hoeffding concentration bound.
-        
-        P(|k_hat_R(x,y) - k_t(x,y)| > epsilon) <= 4 exp(-R epsilon^2 / 4)
-        """
+        """Hoeffding concentration bound: P(|k_hat_R - k_t| > epsilon) <= 4 exp(-R epsilon^2 / 4)."""
         return 4 * np.exp(-self.R * epsilon**2 / 4)
     
     def finite_sample_bound(self, N: int, epsilon: float, delta: float) -> int:
-        """
-        Compute required R for finite sample guarantee.
-        
-        If R >= (4/epsilon^2) log(4N^2/delta), then with probability >= 1-delta,
-        max_{i,j} |k_hat_R(x_i, x_j) - k_t(x_i, x_j)| <= epsilon
-        """
+        """Compute required R for finite sample guarantee."""
         return int(np.ceil(4 / epsilon**2 * np.log(4 * N**2 / delta)))
 

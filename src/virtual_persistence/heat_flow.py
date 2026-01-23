@@ -9,17 +9,7 @@ from typing import Optional, Tuple
 
 
 def graph_laplacian(adjacency: np.ndarray, normalized: bool = True) -> csr_matrix:
-    """
-    Compute graph Laplacian.
-    
-    Args:
-        adjacency: Adjacency matrix (sparse or dense), shape (n, n)
-        normalized: If True, use normalized Laplacian L = I - D^{-1/2} A D^{-1/2}
-                    If False, use combinatorial Laplacian L = D - A
-    
-    Returns:
-        Laplacian matrix (sparse)
-    """
+    """Compute graph Laplacian."""
     if not isinstance(adjacency, csr_matrix):
         adjacency = csr_matrix(adjacency)
     
@@ -39,16 +29,7 @@ def graph_laplacian(adjacency: np.ndarray, normalized: bool = True) -> csr_matri
 
 
 def heat_kernel(L: csr_matrix, tau: float) -> csr_matrix:
-    """
-    Compute heat kernel H(tau) = exp(-tau * L).
-    
-    Args:
-        L: Graph Laplacian (sparse)
-        tau: Time parameter (heat diffusion time)
-    
-    Returns:
-        Heat kernel matrix (sparse)
-    """
+    """Compute heat kernel H(tau) = exp(-tau * L)."""
     n = L.shape[0]
     I = eye(n)
     
@@ -68,20 +49,7 @@ def heat_kernel(L: csr_matrix, tau: float) -> csr_matrix:
 def heat_edge_weights(adjacency: np.ndarray, 
                       tau: float = 1.0,
                       normalized: bool = True) -> np.ndarray:
-    """
-    Compute heat-based edge weights.
-    
-    Weights are computed as w_tau(u,v) = H(tau)_{uv} for (u,v) in E only.
-    Non-edges remain zero (no new edges created).
-    
-    Args:
-        adjacency: Adjacency matrix, shape (n, n)
-        tau: Heat diffusion time
-        normalized: Whether to use normalized Laplacian
-    
-    Returns:
-        Weighted adjacency matrix (same sparsity pattern as input)
-    """
+    """Compute heat-based edge weights w_tau(u,v) = H(tau)_{uv}."""
     L = graph_laplacian(adjacency, normalized=normalized)
     H = heat_kernel(L, tau)
     
@@ -98,23 +66,7 @@ def heat_vertex_function(adjacency: np.ndarray,
                          source: Optional[np.ndarray] = None,
                          method: str = 'content',
                          normalize: str = 'rank') -> np.ndarray:
-    """
-    Compute heat-derived vertex function for lower-star filtration.
-    
-    Options:
-    - 'content': f_tau(v) = H(tau)_{vv} (heat content at node)
-    - 'diffusion': f_tau(v) = u(tau)_v where u(tau) = H(tau) * s (diffusion from source)
-    
-    Args:
-        adjacency: Adjacency matrix, shape (n, n)
-        tau: Heat diffusion time
-        source: Source distribution for diffusion method (if None, uses uniform)
-        method: 'content' or 'diffusion'
-        normalize: Normalization method: 'rank' (default, recommended), 'minmax', 'zscore', or None
-    
-    Returns:
-        Vertex function values, shape (n,), normalized per graph
-    """
+    """Compute heat-derived vertex function for lower-star filtration."""
     L = graph_laplacian(adjacency, normalized=True)
     H = heat_kernel(L, tau)
     
@@ -162,16 +114,5 @@ def heat_vertex_function(adjacency: np.ndarray,
 
 def lower_star_filtration_value(clique_vertices: np.ndarray, 
                                vertex_function: np.ndarray) -> float:
-    """
-    Compute lower-star filtration value for a clique.
-    
-    Lower-star filtration: f(sigma) = max_{v in sigma} f(v)
-    
-    Args:
-        clique_vertices: Indices of vertices in clique
-        vertex_function: Vertex function values
-    
-    Returns:
-        Filtration value
-    """
+    """Compute lower-star filtration value: f(sigma) = max_{v in sigma} f(v)."""
     return np.max(vertex_function[clique_vertices])

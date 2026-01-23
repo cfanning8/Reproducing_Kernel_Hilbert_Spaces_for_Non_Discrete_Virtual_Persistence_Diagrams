@@ -17,15 +17,7 @@ from .virtual_diagrams import PersistenceDiagram
 
 
 def graph_to_adjacency(graph_data) -> np.ndarray:
-    """
-    Convert graph data to adjacency matrix.
-    
-    Args:
-        graph_data: PyTorch Geometric Data object or dict with 'edge_index'
-    
-    Returns:
-        Adjacency matrix, shape (n, n)
-    """
+    """Convert graph data to adjacency matrix."""
     if hasattr(graph_data, 'edge_index'):
         # PyTorch Geometric
         edge_index = graph_data.edge_index.cpu().numpy()
@@ -46,16 +38,7 @@ def graph_to_adjacency(graph_data) -> np.ndarray:
 
 
 def compute_clique_complex(adjacency: np.ndarray, max_dim: int = 2) -> List[List[Tuple]]:
-    """
-    Compute clique complex (flag complex) up to max_dim.
-    
-    Args:
-        adjacency: Adjacency matrix
-        max_dim: Maximum dimension of simplices
-    
-    Returns:
-        List of simplices by dimension: [0-simplices, 1-simplices, 2-simplices, ...]
-    """
+    """Compute clique complex up to max_dim."""
     n = adjacency.shape[0]
     simplices = [[] for _ in range(max_dim + 1)]
     
@@ -82,22 +65,7 @@ def lower_star_filtration_graph(graph_data,
                                 tau: float = 1.0,
                                 heat_method: str = 'content',
                                 max_dim: int = 2) -> PersistenceDiagram:
-    """
-    Compute persistence diagram from graph using lower-star filtration on clique complex.
-    
-    Uses heat-derived vertex function: f_tau(v) from heat kernel H(tau).
-    
-    Args:
-        graph_data: Graph data (PyTorch Geometric or dict)
-        tau: Heat diffusion time
-        heat_method: 'content' or 'diffusion' for vertex function
-        max_dim: Maximum dimension of simplices (default: 2 for H1 computation)
-                 For H1, 2-skeleton (up to triangles) is sufficient.
-                 Higher dimensions increase computational cost (O(n^3) for triangles).
-    
-    Returns:
-        Persistence diagram (H1 only for now)
-    """
+    """Compute persistence diagram from graph using lower-star filtration."""
     adjacency = graph_to_adjacency(graph_data)
     vertex_function = heat_vertex_function(adjacency, tau=tau, method=heat_method, normalize='rank')
     simplices = compute_clique_complex(adjacency, max_dim=max_dim)
@@ -135,7 +103,7 @@ def lower_star_filtration_graph(graph_data,
 
 def compute_persistence_diagram_alpha(X: np.ndarray, 
                                      max_points: Optional[int] = None) -> PersistenceDiagram:
-    """Compute persistence diagram from point cloud using alpha complex."""
+    """Compute persistence diagram using alpha complex."""
     if max_points is not None and len(X) > max_points:
         rng = np.random.RandomState(14)
         indices = rng.choice(len(X), max_points, replace=False)
@@ -162,21 +130,7 @@ def compute_persistence_diagram(X,
                                 tau: float = 1.0,
                                 heat_method: str = 'content',
                                 max_dim: int = 2) -> np.ndarray:
-    """
-    Compute persistence diagram from input data.
-    
-    Args:
-        X: Input data (point cloud array or graph data)
-        method: 'ripser', 'gudhi', 'alpha', 'auto', or 'graph'
-        max_points: Maximum points for subsampling
-        is_graph: Whether input is a graph
-        tau: Heat diffusion time (for graphs)
-        heat_method: Heat method for graphs ('content' or 'diffusion')
-        max_dim: Maximum dimension of simplices (default: 2 for H1)
-    
-    Returns:
-        Array of (birth, death) pairs, shape (n, 2)
-    """
+    """Compute persistence diagram from input data."""
     if is_graph or (hasattr(X, 'edge_index') or (isinstance(X, dict) and 'edge_index' in X)):
         diagram = lower_star_filtration_graph(X, tau=tau, heat_method=heat_method, max_dim=max_dim)
         return diagram.points

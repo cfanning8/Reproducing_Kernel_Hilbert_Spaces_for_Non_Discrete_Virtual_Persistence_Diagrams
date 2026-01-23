@@ -13,19 +13,7 @@ class MetricPair:
     
     def __init__(self, X: np.ndarray, d: Optional[np.ndarray] = None, A: Optional[np.ndarray] = None, 
                  max_points: int = 1000, lazy: bool = True):
-        """
-        Initialize metric pair.
-        
-        Args:
-            X: Points in metric space, shape (n, dim)
-            d: Precomputed distance matrix, shape (n, n). If None, uses Euclidean.
-            A: Subset of indices in A. If None, uses diagonal/basepoint proxy.
-            max_points: Maximum number of points before sampling (default: 1000).
-                       If len(X) > max_points, samples down to max_points.
-            lazy: If True, don't compute distance matrices until needed (default: True).
-                  For persistence diagrams, distance computation uses _d1_persistence_point
-                  directly, so full matrices aren't needed.
-        """
+        """Initialize metric pair."""
         self.X = np.asarray(X)
         self.n = len(self.X)
         
@@ -153,12 +141,7 @@ class PersistenceDiagram:
     """Represents a finite persistence diagram as a multiset."""
     
     def __init__(self, points: np.ndarray):
-        """
-        Initialize persistence diagram.
-        
-        Args:
-            points: Array of (birth, death) pairs, shape (n, 2)
-        """
+        """Initialize persistence diagram from (birth, death) pairs."""
         self.points = np.asarray(points)
         if len(self.points) > 0:
             assert self.points.shape[1] == 2
@@ -207,13 +190,7 @@ class VirtualDiagram:
     
     def __init__(self, alpha: Dict[Tuple[float, float], int], 
                  beta: Optional[Dict[Tuple[float, float], int]] = None):
-        """
-        Initialize virtual diagram.
-        
-        Args:
-            alpha: Dictionary mapping (birth, death) pairs to multiplicities (positive)
-            beta: Dictionary mapping (birth, death) pairs to multiplicities (positive)
-        """
+        """Initialize virtual diagram from alpha and beta multisets."""
         self.alpha = defaultdict(int, {k: max(0, v) for k, v in alpha.items()})
         self.beta = defaultdict(int, {k: max(0, v) for k, v in (beta or {}).items()})
     
@@ -256,19 +233,7 @@ class VirtualDiagram:
 
 
 def wasserstein_1(alpha: np.ndarray, beta: np.ndarray, d1: np.ndarray) -> float:
-    """
-    Compute 1-Wasserstein distance between persistence diagrams.
-    
-    Uses Hungarian algorithm for optimal matching.
-    
-    Args:
-        alpha: First diagram, shape (n, 2)
-        beta: Second diagram, shape (m, 2)
-        d1: 1-strengthened metric matrix
-    
-    Returns:
-        W1 distance
-    """
+    """Compute 1-Wasserstein distance between persistence diagrams."""
     from scipy.optimize import linear_sum_assignment
     
     n, m = len(alpha), len(beta)
@@ -306,17 +271,7 @@ def d1_to_basepoint(point: np.ndarray, d1: np.ndarray) -> float:
 
 def grothendieck_metric(g1: VirtualDiagram, g2: VirtualDiagram, 
                         d1: np.ndarray) -> float:
-    """
-    Compute Grothendieck metric rho(g1, g2) = W1(alpha1 + beta2, alpha2 + beta1).
-    
-    Args:
-        g1: First virtual diagram (alpha1 - beta1)
-        g2: Second virtual diagram (alpha2 - beta2)
-        d1: 1-strengthened metric matrix
-    
-    Returns:
-        rho(g1, g2)
-    """
+    """Compute Grothendieck metric rho(g1, g2) = W1(alpha1 + beta2, alpha2 + beta1)."""
     alpha1, beta1 = g1.to_diagram()
     alpha2, beta2 = g2.to_diagram()
     

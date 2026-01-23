@@ -7,12 +7,7 @@ from .virtual_diagrams import PersistenceDiagram, wasserstein_1, MetricPair
 
 
 def _d1_persistence_point(p1: np.ndarray, p2: np.ndarray) -> float:
-    """Compute d1 distance between two persistence points.
-    
-    Base metric d is L-infinity: d((b1, d1), (b2, d2)) = max(|b1 - b2|, |d1 - d2|).
-    Distance to diagonal: d((b, d), diagonal) = (d - b) / 2.
-    Then d1(x, y) = min(d(x, y), d(x, diagonal) + d(y, diagonal)).
-    """
+    """Compute d1 distance between two persistence points."""
     d_xy = max(abs(p1[0] - p2[0]), abs(p1[1] - p2[1]))
     d_p1_diag = abs(p1[1] - p1[0]) / 2.0
     d_p2_diag = abs(p2[1] - p2[0]) / 2.0
@@ -22,22 +17,7 @@ def _d1_persistence_point(p1: np.ndarray, p2: np.ndarray) -> float:
 def compute_barycenter_exact(diagrams: List[PersistenceDiagram],
                             metric_pair: MetricPair,
                             max_candidate_points: int = 100) -> PersistenceDiagram:
-    """Compute exact W1 barycenter using linear programming.
-    
-    Formulates the problem as: min_B sum_i W1(D_i, B)
-    
-    where B is optimized over candidate points (all unique points from input diagrams).
-    Uses linear programming to find exact solution.
-    
-    Args:
-        diagrams: List of persistence diagrams
-        metric_pair: Metric pair for computing W1 distances
-        max_candidate_points: Maximum number of candidate points to consider.
-                            If exceeded, falls back to heuristic method.
-    
-    Returns:
-        Exact barycenter persistence diagram
-    """
+    """Compute exact W1 barycenter using linear programming."""
     if len(diagrams) == 0:
         return PersistenceDiagram(np.empty((0, 2)))
     

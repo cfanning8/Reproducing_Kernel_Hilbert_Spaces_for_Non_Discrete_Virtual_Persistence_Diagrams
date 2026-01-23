@@ -12,21 +12,11 @@ import warnings
 
 
 class GraphLaplacianEmbedding:
-    """
-    Hilbert embedding based on graph Laplacian eigenvectors.
-    For (X/A, d1, [A]), construct weighted graph and use Laplacian eigenvectors.
-    """
+    """Hilbert embedding based on graph Laplacian eigenvectors."""
     
     def __init__(self, dim_H: int = 128, normalized: bool = True, 
                  k_neighbors: int = 10):
-        """
-        Initialize graph Laplacian embedding.
-        
-        Args:
-            dim_H: Dimension of embedding space
-            normalized: Use normalized Laplacian
-            k_neighbors: Number of neighbors for k-NN graph
-        """
+        """Initialize graph Laplacian embedding."""
         self.dim_H = dim_H
         self.normalized = normalized
         self.k_neighbors = k_neighbors
@@ -35,13 +25,7 @@ class GraphLaplacianEmbedding:
         self.L = None  # Lipschitz constant
     
     def fit(self, X: np.ndarray, d1: np.ndarray):
-        """
-        Fit embedding to data.
-        
-        Args:
-            X: Points in X/A, shape (n, dim)
-            d1: 1-strengthened metric matrix, shape (n, n)
-        """
+        """Fit embedding to data."""
         n = len(X)
         
         from sklearn.neighbors import kneighbors_graph
@@ -72,15 +56,7 @@ class GraphLaplacianEmbedding:
             raise RuntimeError(f"Error computing Laplacian eigenvectors: {e}") from e
     
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        """
-        Embed point x.
-        
-        Args:
-            x: Point in X/A
-        
-        Returns:
-            Embedding in H
-        """
+        """Embed point x."""
         if self.eigenvectors is None:
             raise ValueError("Embedding not fitted")
         
@@ -98,20 +74,11 @@ class GraphLaplacianEmbedding:
 
 
 class LearnedEmbedding:
-    """
-    Learned Hilbert embedding using neural network or other ML method.
-    """
+    """Learned Hilbert embedding using neural network."""
     
     def __init__(self, dim_H: int = 128, hidden_dims: list = [256, 128],
                  learning_rate: float = 0.001):
-        """
-        Initialize learned embedding.
-        
-        Args:
-            dim_H: Output dimension
-            hidden_dims: Hidden layer dimensions
-            learning_rate: Learning rate for training
-        """
+        """Initialize learned embedding."""
         self.dim_H = dim_H
         self.hidden_dims = hidden_dims
         self.learning_rate = learning_rate
@@ -119,14 +86,7 @@ class LearnedEmbedding:
         self.L = 1.0  # Will be estimated during training
     
     def fit(self, X: np.ndarray, d1: np.ndarray, max_epochs: int = 100):
-        """
-        Train embedding to preserve d1 distances.
-        
-        Args:
-            X: Points in X/A
-            d1: 1-strengthened metric matrix
-            max_epochs: Maximum training epochs
-        """
+        """Train embedding to preserve d1 distances."""
         try:
             import torch
             import torch.nn as nn
@@ -191,20 +151,11 @@ class LearnedEmbedding:
 
 
 class SpectralEmbeddingWrapper:
-    """
-    Wrapper for sklearn SpectralEmbedding (Laplacian eigenmaps).
-    """
+    """Wrapper for sklearn SpectralEmbedding."""
     
     def __init__(self, dim_H: int = 128, affinity: str = 'nearest_neighbors',
                  n_neighbors: int = 10):
-        """
-        Initialize spectral embedding.
-        
-        Args:
-            dim_H: Embedding dimension
-            affinity: Affinity matrix type
-            n_neighbors: Number of neighbors
-        """
+        """Initialize spectral embedding."""
         self.dim_H = dim_H
         self.affinity = affinity
         self.n_neighbors = n_neighbors
@@ -214,13 +165,7 @@ class SpectralEmbeddingWrapper:
         self.L = None
     
     def fit(self, X: np.ndarray, d1: Optional[np.ndarray] = None):
-        """
-        Fit embedding.
-        
-        Args:
-            X: Points
-            d1: Optional precomputed distance matrix
-        """
+        """Fit embedding."""
         if d1 is not None:
             sigma = np.median(d1[d1 > 0])
             affinity = np.exp(-d1**2 / (2 * sigma**2))
@@ -241,16 +186,7 @@ class SpectralEmbeddingWrapper:
 
 
 def create_embedding(embedding_type: str = 'default', **kwargs) -> Tuple[Callable, float]:
-    """
-    Factory function to create embeddings.
-    
-    Args:
-        embedding_type: 'default', 'laplacian', 'learned', 'spectral', 'pca'
-        **kwargs: Embedding-specific arguments
-    
-    Returns:
-        (phi, L) embedding function and Lipschitz constant
-    """
+    """Factory function to create embeddings. Returns (phi, L)."""
     dim_H = kwargs.get('dim_H', 128)
     
     if embedding_type == 'laplacian':
