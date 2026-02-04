@@ -19,7 +19,7 @@ Persistent homology associates to a filtered simplicial complex a persistence di
 2. **Banach-Space Model**: For non-discrete cases, $K(X,A)$ embeds isometrically into its Banach completion $B = \widehat{V}(X,A) \cong \mathcal{F}(X/A,d_1)$, the Lipschitz-free (Arens--Eells) Banach space.
 
 3. **Translation-Invariant Kernels**: Each bounded symmetric positive operator $Q: B \to B^*$ determines a translation-invariant Gaussian kernel:
-   $$k(x,y) = \exp\left(-\frac{1}{2}\langle Q(x-y), x-y\rangle_{B,B^*}\right)$$
+   $k(x,y) = \exp\left(-\frac{1}{2}\langle Q(x-y), x-y\rangle_{B,B^*}\right)$
 
 4. **Explicit Bounds**: The package provides:
    - Global $\rho$-Lipschitz bounds for all functions in the RKHS
@@ -175,22 +175,22 @@ from virtual_persistence.persistence import compute_persistence_diagram
 ### Metric Pairs and Virtual Diagrams
 
 A **metric pair** $(X,d,A)$ consists of a metric space $(X,d)$ with a distinguished subset $A \subseteq X$. The $1$-strengthened metric is:
-$$d_1(x,y) = \min(d(x,y), d(x,A) + d(y,A))$$
+$d_1(x,y) = \min(d(x,y), d(x,A) + d(y,A))$
 
 The **Grothendieck group** $K(X,A)$ extends the monoid of finite persistence diagrams $D(X,A)$ by formally adjoining inverses, with metric:
-$$\rho(\alpha-\beta, \gamma-\delta) = W_1(\alpha+\delta, \gamma+\beta)$$
+$\rho(\alpha-\beta, \gamma-\delta) = W_1(\alpha+\delta, \gamma+\beta)$
 
 ### Translation-Invariant Kernels
 
 For the Banach completion $B = \widehat{V}(X,A) \cong \mathcal{F}(X/A,d_1)$, each bounded symmetric positive operator $Q: B \to B^*$ determines a Gaussian kernel:
-$$k_{J,\Sigma,t}(x,y) = \exp\left(-\frac{t}{2}\|\Sigma^{1/2}J(x-y)\|_{\ell^2}^2\right)$$
+$k_{J,\Sigma,t}(x,y) = \exp\left(-\frac{t}{2}\|\Sigma^{1/2}J(x-y)\|_{\ell^2}^2\right)$
 
 where $J: B \to \ell^2$ is a Hilbert embedding and $\Sigma$ is a trace-class covariance operator.
 
 ### Lipschitz Bounds
 
 For every $f \in H_{J,\Sigma,t}$:
-$$\mathrm{Lip}_\rho(f|_{K(X,A)}) \leq \sqrt{t}\left(\sum_{n\geq 1}\sigma_n w_n^2\right)^{1/2}\|f\|_{H_{J,\Sigma,t}}$$
+$\mathrm{Lip}_\rho(f|_{K(X,A)}) \leq \sqrt{t}\left(\sum_{n\geq 1}\sigma_n w_n^2\right)^{1/2}\|f\|_{H_{J,\Sigma,t}}$
 
 ## References
 
