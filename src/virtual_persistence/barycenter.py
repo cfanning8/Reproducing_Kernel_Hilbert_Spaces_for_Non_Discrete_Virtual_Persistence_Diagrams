@@ -1,4 +1,4 @@
-"""Barycenter (Frechet mean) computation for persistence diagrams."""
+"""Barycenter computation for persistence diagrams."""
 
 import numpy as np
 from typing import List, Optional, Tuple

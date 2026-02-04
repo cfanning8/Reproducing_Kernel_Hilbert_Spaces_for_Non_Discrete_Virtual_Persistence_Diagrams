@@ -18,8 +18,6 @@ class MetricPair:
         self.n = len(self.X)
         
         if self.n > max_points:
-            import warnings
-            warnings.warn(f"MetricPair: Sampling {max_points} points from {self.n} to prevent memory issues")
             rng = np.random.RandomState(14)
             sample_idx = rng.choice(self.n, size=max_points, replace=False)
             self.X = self.X[sample_idx]
@@ -43,9 +41,6 @@ class MetricPair:
     def _compute_d(self):
         """Compute distance matrix if not already computed."""
         if not self._d_computed:
-            if self.n > 10000:
-                import warnings
-                warnings.warn(f"Computing {self.n}x{self.n} distance matrix - this may be slow and memory-intensive")
             self._d = cdist(self.X, self.X, metric='euclidean')
             self._d_computed = True
     
@@ -79,10 +74,6 @@ class MetricPair:
             return
         
         n = self.n
-        
-        if n > 10000:
-            import warnings
-            warnings.warn(f"Computing {n}x{n} d1 matrix - this may be slow and memory-intensive")
         
         if not self._d_computed:
             self._compute_d()

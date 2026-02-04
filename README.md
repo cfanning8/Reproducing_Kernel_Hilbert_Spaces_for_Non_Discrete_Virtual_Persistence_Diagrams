@@ -1,4 +1,4 @@
-# Virtual Persistence: RKHS for Non-Discrete Virtual Persistence Diagrams
+# Reproducing Kernel Hilbert Spaces for Non-Discrete Virtual Persistence Diagrams
 
 This repository provides a Python implementation of reproducing kernel Hilbert spaces (RKHS) for virtual persistence diagrams in the non-discrete case, as described in:
 
@@ -8,9 +8,9 @@ This repository provides a Python implementation of reproducing kernel Hilbert s
 
 ### Virtual Persistence Diagrams
 
-Persistent homology associates to a filtered simplicial complex a persistence diagram: a finite multiset of points in $\mathbb{R}^2$ encoding birth and death parameters of homological features. However, finite persistence diagrams form a commutative monoid without additive inverses, which limits kernel constructions.
+Persistent homology associates to a filtered simplicial complex a persistence diagram: a finite multiset of points in $\mathbb{R}^2$ encoding birth and death parameters of homological features. However, finite persistence diagrams form a commutative monoid without additive inverses.
 
-**Virtual persistence diagrams** resolve this by passing to the Grothendieck group $K(X,A)$ of diagrams relative to a metric pair $(X,d,A)$, equipped with the canonical translation-invariant Grothendieck metric $\rho$ extending the Wasserstein-$1$ distance.
+**Virtual persistence diagrams** extend this framework to arbitrary pointed metric spaces. They are constructed by passing to the Grothendieck group $K(X,A)$ of diagrams relative to a metric pair $(X,d,A)$, equipped with the canonical translation-invariant Grothendieck metric $\rho$ extending the Wasserstein-$1$ distance.
 
 ### Key Results
 
@@ -50,24 +50,6 @@ pip install -e .
 ```
 
 Or use the modules directly by adding the `src/` directory to your Python path.
-
-## Package Structure
-
-```
-virtual_persistence/
-├── theoretical/          # Core theoretical modules
-│   ├── virtual_diagrams.py    # MetricPair, PersistenceDiagram, VirtualDiagram, grothendieck_metric
-│   ├── kernels.py             # HilbertEmbedding, GaussianRKHSKernel, RandomFourierFeatures
-│   ├── embeddings.py          # GraphLaplacianEmbedding, SpectralEmbeddingWrapper
-│   ├── barycenter.py          # Wasserstein barycenter computation
-│   └── heat_flow.py           # Heat flow on graphs for filtrations
-├── persistence.py        # Persistence diagram computation from graphs/point clouds
-└── visualization.py      # Visualization utilities
-
-scripts/figures/          # Paper figure generation scripts
-├── paper_figures.py           # Figures 1-2: Complex plane and quotient space
-└── petersen_graph_visualization.py  # Figures 3-4: Network labelings and dendrograms
-```
 
 ## Usage
 
@@ -218,7 +200,27 @@ $$\mathrm{Lip}_\rho(f|_{K(X,A)}) \leq \sqrt{t}\left(\sum_{n\geq 1}\sigma_n w_n^2
 
 ## License
 
-[Specify license here]
+MIT License
+
+Copyright (c) 2025 Charles Fanning, Mehmet Emin Aktas
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Authors
 

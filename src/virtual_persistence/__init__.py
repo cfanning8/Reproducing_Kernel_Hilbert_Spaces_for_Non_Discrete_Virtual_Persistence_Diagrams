@@ -1,5 +1,5 @@
 """
-Virtual Persistence: RKHS for Non-Discrete Virtual Persistence Diagrams
+Reproducing Kernel Hilbert Spaces for Non-Discrete Virtual Persistence Diagrams
 
 This package implements the theoretical framework for reproducing kernel Hilbert
 spaces on virtual persistence diagrams in the non-discrete case, as described in:

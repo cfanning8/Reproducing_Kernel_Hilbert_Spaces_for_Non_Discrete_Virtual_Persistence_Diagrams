@@ -158,8 +158,6 @@ class RandomFourierFeatures:
     
     def kernel_approx(self, x: np.ndarray, y: np.ndarray) -> float:
         """
-        Approximate kernel k_t(x,y) via random features.
-        
         k_hat_R(x,y) = <Phi_R(x), Phi_R(y)>
         """
         phi_x = self.real_features(x)
@@ -167,7 +165,7 @@ class RandomFourierFeatures:
         return np.dot(phi_x, phi_y)
     
     def concentration_bound(self, epsilon: float) -> float:
-        """Hoeffding concentration bound: P(|k_hat_R - k_t| > epsilon) <= 4 exp(-R epsilon^2 / 4)."""
+        """P(|k_hat_R - k_t| > epsilon) <= 4 exp(-R epsilon^2 / 4)."""
         return 4 * np.exp(-self.R * epsilon**2 / 4)
     
     def finite_sample_bound(self, N: int, epsilon: float, delta: float) -> int:

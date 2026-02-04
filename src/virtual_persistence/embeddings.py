@@ -1,4 +1,4 @@
-"""Hilbert embeddings: learned, graph Laplacian-based, spectral."""
+"""Hilbert embeddings"""
 
 import numpy as np
 from typing import Callable, Optional, Tuple
@@ -122,7 +122,7 @@ class LearnedEmbedding:
             
         except ImportError:
             raise ImportError(
-                "PyTorch not available. Install with: pip install torch"
+                "PyTorch not available."
             )
     
     def __call__(self, x: np.ndarray) -> np.ndarray:
